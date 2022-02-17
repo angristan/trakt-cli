@@ -16,7 +16,7 @@ This is a CLI for [trakt.tv](https://trakt.tv) using the [trakt.tv API](https://
 
 ## Installation
 
-Grab a binary build from the [release](https://github.com/angristan/trakt-cli/releases).
+Grab a binary build from the [releases](https://github.com/angristan/trakt-cli/releases).
 
 ## Development
 
