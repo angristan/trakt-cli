@@ -1,0 +1,12 @@
+builds:
+  - goos:
+      - linux
+      - windows
+      - darwin
+      - freebsd
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
