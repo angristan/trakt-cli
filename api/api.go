@@ -74,10 +74,11 @@ type AuthDeviceCodeResp struct {
 }
 
 type requestParams struct {
-	method string
-	path   string
-	body   interface{}
-	auth   bool
+	method     string
+	path       string
+	body       interface{}
+	auth       bool
+	pagination PaginationsParams
 }
 
 func (c *APIClient) doRequest(params requestParams) (*http.Response, error) {
@@ -96,6 +97,15 @@ func (c *APIClient) doRequest(params requestParams) (*http.Response, error) {
 		}
 		req.Body = io.NopCloser(bytes.NewReader(body))
 	}
+
+	q := req.URL.Query()
+	if params.pagination.Page != 0 {
+		q.Add("page", fmt.Sprintf("%d", params.pagination.Page))
+	}
+	if params.pagination.Limit != 0 {
+		q.Add("limit", fmt.Sprintf("%d", params.pagination.Limit))
+	}
+	req.URL.RawQuery = q.Encode()
 
 	if params.auth {
 		req.Header.Add("trakt-api-key", c.Credentials.ClientID)
@@ -212,27 +222,48 @@ type HistoryItem struct {
 	} `json:"show,omitempty"`
 }
 
-func (c *APIClient) GetUserHistory(user string) (UserHistory, error) {
+type PaginationsParams struct {
+	Page  int
+	Limit int
+}
+
+type Pagination struct {
+	Page      string `json:"page"`
+	Limit     string `json:"limit"`
+	PageCount string `json:"page_count"`
+	ItemCount string `json:"item_count"`
+}
+
+func (c *APIClient) GetUserHistory(user string, params PaginationsParams) (UserHistory, Pagination, error) {
 	var resp UserHistory
 	httpResp, err := c.doRequest(requestParams{
-		method: http.MethodGet,
-		path:   fmt.Sprintf("/users/%s/history", user),
-		body:   nil,
-		auth:   true,
+		method:     http.MethodGet,
+		path:       fmt.Sprintf("/users/%s/history", user),
+		body:       nil,
+		auth:       true,
+		pagination: params,
 	})
 	if err != nil {
-		return nil, err
+		return nil, Pagination{}, err
 	}
 	defer httpResp.Body.Close()
 
+	var pagination Pagination
 	if httpResp.StatusCode == 200 {
 		err = json.NewDecoder(httpResp.Body).Decode(&resp)
 		if err != nil {
-			return nil, err
+			return nil, Pagination{}, err
+		}
+
+		pagination = Pagination{
+			Page:      httpResp.Header.Get("X-Pagination-Page"),
+			Limit:     httpResp.Header.Get("X-Pagination-Limit"),
+			PageCount: httpResp.Header.Get("X-Pagination-Page-Count"),
+			ItemCount: httpResp.Header.Get("X-Pagination-Item-Count"),
 		}
 	}
 
-	return resp, nil
+	return resp, pagination, nil
 }
 
 type UserSettings struct {

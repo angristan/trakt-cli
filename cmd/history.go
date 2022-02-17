@@ -31,7 +31,19 @@ var historyCmd = &cobra.Command{
 			logrus.WithError(err).Fatal("Failed to get user settings")
 		}
 
-		resp, err := client.GetUserHistory(settings.User.Ids.Slug)
+		page, err := cmd.Flags().GetInt("page")
+		if err != nil {
+			logrus.WithError(err).Fatal("Failed to get page")
+		}
+		limit, err := cmd.Flags().GetInt("limit")
+		if err != nil {
+			logrus.WithError(err).Fatal("Failed to get limit")
+		}
+
+		resp, pagination, err := client.GetUserHistory(settings.User.Ids.Slug, api.PaginationsParams{
+			Page:  page,
+			Limit: limit,
+		})
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -69,11 +81,16 @@ var historyCmd = &cobra.Command{
 
 		t.Render()
 
+		fmt.Printf("Page %s out of %s, %s items in total", pagination.Page, pagination.PageCount, pagination.ItemCount)
+
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(historyCmd)
+
+	historyCmd.Flags().Int("page", 1, "")
+	historyCmd.Flags().Int("limit", 10, "")
 
 	// Here you will define your flags and configuration settings.
 
