@@ -92,6 +92,12 @@ func init() {
 	authCmd.PersistentFlags().String("client-id", "", "")
 	authCmd.PersistentFlags().String("client-secret", "", "")
 
-	authCmd.MarkPersistentFlagRequired("client-id")
-	authCmd.MarkPersistentFlagRequired("client-secret")
+	err := authCmd.MarkPersistentFlagRequired("client-id")
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to mark client-id flag required")
+	}
+	err = authCmd.MarkPersistentFlagRequired("client-secret")
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to mark client-secret flag required")
+	}
 }
