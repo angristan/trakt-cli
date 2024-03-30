@@ -2,16 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
 
 	"github.com/angristan/trakt-cli/api"
 	"github.com/briandowns/spinner"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
+	"github.com/adrg/xdg"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +32,7 @@ var authCmd = &cobra.Command{
 			ClientID: cmd.Flag("client-id").Value.String(),
 		})
 		if err != nil {
-			logrus.WithError(err).Fatal("Failed to get device code1")
+			log.Fatalf("Failed to get device code: %v\n", err)
 			return
 		}
 
@@ -50,7 +49,7 @@ var authCmd = &cobra.Command{
 				ClientSecret: cmd.Flag("client-secret").Value.String(),
 			})
 			if err != nil {
-				logrus.WithError(err).Fatal("Failed to get device code")
+				log.Fatalf("Failed to get device code: %s\n", err)
 				return
 			}
 			if len(tokenResp.AccessToken) == 0 {
@@ -67,18 +66,17 @@ var authCmd = &cobra.Command{
 					fmt.Printf("Error while Marshaling. %v", err)
 				}
 
-				// write to ~/.trakt.yaml
-				homeDir, err := os.UserHomeDir()
+				configFile, err := xdg.ConfigFile("trakt-cli/config.yaml")
 				if err != nil {
 					log.Fatal(err)
 				}
-				err = ioutil.WriteFile(homeDir+"/.trakt.yaml", yamlData, 0644)
+				err = os.WriteFile(configFile, yamlData, 0644)
 				if err != nil {
 					fmt.Printf("Error while writing to file. %v", err)
 				}
 
 				s.Stop()
-				fmt.Printf("Successfully authenticated, creds written to ~/.trakt.yaml\n")
+				log.Printf("Successfully authenticated, creds written to %q\n", configFile)
 
 				break
 			}
@@ -94,10 +92,10 @@ func init() {
 
 	err := authCmd.MarkPersistentFlagRequired("client-id")
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed to mark client-id flag required")
+		log.Fatalf("Failed to mark client-id flag required: %v\n", err)
 	}
 	err = authCmd.MarkPersistentFlagRequired("client-secret")
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed to mark client-secret flag required")
+		log.Fatalf("Failed to mark client-secret flag required: %v\n", err)
 	}
 }

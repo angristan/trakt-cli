@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/adrg/xdg"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -33,18 +33,16 @@ type Credentials struct {
 // Create a new API client for the given API version.
 func NewAPIClient() APIClient {
 
-	// read ~/.trakt.yaml file
-	homeDir, err := os.UserHomeDir()
+	configFile, err := xdg.SearchConfigFile("trakt-cli/config.yaml")
+	if err != nil {
+		log.Fatalf("Failed to read %q file, please run `trakt auth`", configFile)
+	}
+	config, err := os.ReadFile(configFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err := ioutil.ReadFile(homeDir + "/.trakt.yaml")
-	if err != nil {
-		logrus.WithError(err).Error("Failed to read ~/.trakt.yaml file, please run `trakt auth`")
-	}
-
 	var creds Credentials
-	err = yaml.Unmarshal(out, &creds)
+	err = yaml.Unmarshal(config, &creds)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to read ~/.trakt.yaml file, please run `trakt auth`")
 	}
