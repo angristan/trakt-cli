@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/adrg/xdg"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -44,7 +43,7 @@ func NewAPIClient() APIClient {
 	var creds Credentials
 	err = yaml.Unmarshal(config, &creds)
 	if err != nil {
-		logrus.WithError(err).Error("Failed to read ~/.trakt.yaml file, please run `trakt auth`")
+		log.Fatalf("Failed to read %q file, please run `trakt auth`", configFile)
 	}
 
 	return APIClient{

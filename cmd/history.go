@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/mergestat/timediff"
 	"github.com/muesli/termenv"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -28,16 +28,16 @@ var historyCmd = &cobra.Command{
 
 		settings, err := client.GetUserSettings()
 		if err != nil {
-			logrus.WithError(err).Fatal("Failed to get user settings")
+			log.Fatalf("Failed to get user settings: %v\n", err)
 		}
 
 		page, err := cmd.Flags().GetInt("page")
 		if err != nil {
-			logrus.WithError(err).Fatal("Failed to get page")
+			log.Fatalf("Failed to get page: %v\n", err)
 		}
 		limit, err := cmd.Flags().GetInt("limit")
 		if err != nil {
-			logrus.WithError(err).Fatal("Failed to get limit")
+			log.Fatalf("Failed to get limit: %v\n", err)
 		}
 
 		resp, pagination, err := client.GetUserHistory(settings.User.Ids.Slug, api.PaginationsParams{

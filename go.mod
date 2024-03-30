@@ -8,7 +8,6 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.2.7
 	github.com/mergestat/timediff v0.0.3
 	github.com/muesli/termenv v0.11.0
-	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.3.0
 )
 
