@@ -79,6 +79,7 @@ type requestParams struct {
 	body       interface{}
 	auth       bool
 	pagination PaginationsParams
+	query      map[string]string
 }
 
 func (c *APIClient) doRequest(params requestParams) (*http.Response, error) {
@@ -105,6 +106,9 @@ func (c *APIClient) doRequest(params requestParams) (*http.Response, error) {
 	}
 	if params.pagination.Limit != 0 {
 		q.Add("limit", fmt.Sprintf("%d", params.pagination.Limit))
+	}
+	for k, v := range params.query {
+		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -334,6 +338,62 @@ func (c *APIClient) GetUserSettings() (UserSettings, error) {
 	err = json.NewDecoder(httpResp.Body).Decode(&resp)
 	if err != nil {
 		return UserSettings{}, err
+	}
+
+	return resp, nil
+}
+
+type SearchResult struct {
+	Type  string  `json:"type"`
+	Score float64 `json:"score"`
+	Movie *struct {
+		Title string `json:"title"`
+		Year  int    `json:"year"`
+		Ids   struct {
+			Trakt int    `json:"trakt"`
+			Slug  string `json:"slug"`
+			Imdb  string `json:"imdb"`
+			Tmdb  int    `json:"tmdb"`
+		} `json:"ids"`
+	} `json:"movie,omitempty"`
+	Show *struct {
+		Title string `json:"title"`
+		Year  int    `json:"year"`
+		Ids   struct {
+			Trakt int    `json:"trakt"`
+			Slug  string `json:"slug"`
+			Tvdb  int    `json:"tvdb"`
+			Imdb  string `json:"imdb"`
+			Tmdb  int    `json:"tmdb"`
+		} `json:"ids"`
+	} `json:"show,omitempty"`
+}
+
+func (c *APIClient) Search(query string, searchType string) ([]SearchResult, error) {
+	httpResp, err := c.doRequest(requestParams{
+		method: http.MethodGet,
+		path:   "/search/" + searchType,
+		auth:   true,
+		query: map[string]string{
+			"query": query,
+		},
+		pagination: PaginationsParams{
+			Limit: 10,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer httpResp.Body.Close()
+
+	if httpResp.StatusCode != 200 {
+		return nil, fmt.Errorf("search failed: %s", httpResp.Status)
+	}
+
+	var resp []SearchResult
+	err = json.NewDecoder(httpResp.Body).Decode(&resp)
+	if err != nil {
+		return nil, err
 	}
 
 	return resp, nil
