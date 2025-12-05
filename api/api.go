@@ -88,6 +88,7 @@ func (c *APIClient) doRequest(params requestParams) (*http.Response, error) {
 	}
 
 	req.Header.Add("Accept", "application/json")
+	req.Header.Add("trakt-api-version", "2")
 
 	if params.body != nil {
 		req.Header.Add("Content-Type", "application/json")
@@ -235,7 +236,6 @@ type Pagination struct {
 }
 
 func (c *APIClient) GetUserHistory(user string, params PaginationsParams) (UserHistory, Pagination, error) {
-	var resp UserHistory
 	httpResp, err := c.doRequest(requestParams{
 		method:     http.MethodGet,
 		path:       fmt.Sprintf("/users/%s/history", user),
@@ -248,19 +248,21 @@ func (c *APIClient) GetUserHistory(user string, params PaginationsParams) (UserH
 	}
 	defer httpResp.Body.Close()
 
-	var pagination Pagination
-	if httpResp.StatusCode == 200 {
-		err = json.NewDecoder(httpResp.Body).Decode(&resp)
-		if err != nil {
-			return nil, Pagination{}, err
-		}
+	if httpResp.StatusCode != 200 {
+		return nil, Pagination{}, fmt.Errorf("failed to get user history: %s", httpResp.Status)
+	}
 
-		pagination = Pagination{
-			Page:      httpResp.Header.Get("X-Pagination-Page"),
-			Limit:     httpResp.Header.Get("X-Pagination-Limit"),
-			PageCount: httpResp.Header.Get("X-Pagination-Page-Count"),
-			ItemCount: httpResp.Header.Get("X-Pagination-Item-Count"),
-		}
+	var resp UserHistory
+	err = json.NewDecoder(httpResp.Body).Decode(&resp)
+	if err != nil {
+		return nil, Pagination{}, err
+	}
+
+	pagination := Pagination{
+		Page:      httpResp.Header.Get("X-Pagination-Page"),
+		Limit:     httpResp.Header.Get("X-Pagination-Limit"),
+		PageCount: httpResp.Header.Get("X-Pagination-Page-Count"),
+		ItemCount: httpResp.Header.Get("X-Pagination-Item-Count"),
 	}
 
 	return resp, pagination, nil
@@ -324,12 +326,14 @@ func (c *APIClient) GetUserSettings() (UserSettings, error) {
 	}
 	defer httpResp.Body.Close()
 
+	if httpResp.StatusCode != 200 {
+		return UserSettings{}, fmt.Errorf("failed to get user settings: %s", httpResp.Status)
+	}
+
 	var resp UserSettings
-	if httpResp.StatusCode == 200 {
-		err = json.NewDecoder(httpResp.Body).Decode(&resp)
-		if err != nil {
-			return UserSettings{}, err
-		}
+	err = json.NewDecoder(httpResp.Body).Decode(&resp)
+	if err != nil {
+		return UserSettings{}, err
 	}
 
 	return resp, nil
