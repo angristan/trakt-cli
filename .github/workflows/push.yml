@@ -73,6 +73,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+      - name: Fetch latest tag
+        run: |
+          git fetch --tags
+          latest_tag=$(git describe --tags --abbrev=0)
+          git checkout "$latest_tag"
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
